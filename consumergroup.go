@@ -708,6 +708,8 @@ func (cg *ConsumerGroup) run() {
 		case <-cg.done:
 			return
 		case cg.errs <- err:
+		default:
+			return
 		}
 		// backoff if needed, being sure to exit cleanly if the CG is done.
 		if backoff != nil {
@@ -716,6 +718,9 @@ func (cg *ConsumerGroup) run() {
 				// exit cleanly if the group is closed.
 				return
 			case <-backoff:
+			default:
+				// exit cleanly if the group is closed.
+				return
 			}
 		}
 	}
@@ -805,6 +810,9 @@ func (cg *ConsumerGroup) nextGeneration(memberID string) (string, error) {
 		gen.close()
 		return memberID, ErrGroupClosed // ErrGroupClosed will trigger leave logic.
 	case cg.next <- &gen:
+	default:
+		gen.close()
+		return memberID, ErrGroupClosed // ErrGroupClosed will trigger leave logic.
 	}
 
 	// wait for generation to complete.  if the CG is closed before the
@@ -818,6 +826,9 @@ func (cg *ConsumerGroup) nextGeneration(memberID string) (string, error) {
 		// before continuing onward.
 		gen.close()
 		return memberID, nil
+	default:
+		gen.close()
+		return memberID, ErrGroupClosed // ErrGroupClosed will trigger leave logic.
 	}
 }
 
